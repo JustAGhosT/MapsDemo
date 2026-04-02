@@ -298,16 +298,29 @@ const validators = {
   mapbox: v => v.startsWith('pk.') && v.length > 20,
   here:   v => v.length > 8,
 };
+const PLACEHOLDERS = {google:'AIza… (Places enabled)', mapbox:'pk.eyJ1…', here:'HERE API key'};
+const storedTokens = {google:'', mapbox:'', here:''};
+
+function maskIfValid(provider) {
+  const input = document.getElementById('tk-' + provider);
+  if (validators[provider](storedTokens[provider] || '')) {
+    input.value = '';
+    input.placeholder = '✓ configured';
+  }
+}
 
 function updateTokenStatus(provider) {
   const input = document.getElementById('tk-' + provider);
   const status = document.getElementById('st-' + provider);
   const v = input.value.trim();
-  if (!v) {
+  if (v) storedTokens[provider] = v;
+  const eff = storedTokens[provider];
+  if (!eff) {
     input.className = 'token-input';
     status.className = 'token-status empty';
     status.textContent = '—';
-  } else if (validators[provider](v)) {
+    input.placeholder = PLACEHOLDERS[provider];
+  } else if (validators[provider](eff)) {
     input.className = 'token-input valid';
     status.className = 'token-status ok';
     status.textContent = '✓';
@@ -316,25 +329,36 @@ function updateTokenStatus(provider) {
     status.className = 'token-status err';
     status.textContent = '✗';
   }
-  // Enable Load APIs only when Mapbox is valid
-  const mbValid = validators.mapbox(document.getElementById('tk-mapbox').value.trim());
-  document.getElementById('load-btn').disabled = !mbValid;
+  document.getElementById('load-btn').disabled = !validators.mapbox(storedTokens.mapbox || '');
 }
 
 ['google','mapbox','here'].forEach(p => {
   const input = document.getElementById('tk-' + p);
+  input.addEventListener('focus', () => {
+    if (storedTokens[p]) {
+      input.value = storedTokens[p];
+      input.placeholder = PLACEHOLDERS[p];
+    }
+  });
+  input.addEventListener('blur', () => {
+    const v = input.value.trim();
+    if (v) storedTokens[p] = v;
+    updateTokenStatus(p);
+    maskIfValid(p);
+  });
   input.addEventListener('input', () => updateTokenStatus(p));
-  // Run once on load to reflect pre-filled values
   updateTokenStatus(p);
+  maskIfValid(p);
 });
 
 function initMap() {
-  tokens.google = document.getElementById('tk-google').value.trim();
-  tokens.mapbox = document.getElementById('tk-mapbox').value.trim();
-  tokens.here   = document.getElementById('tk-here').value.trim();
+  tokens.google = storedTokens.google;
+  tokens.mapbox = storedTokens.mapbox;
+  tokens.here   = storedTokens.here;
   mapboxgl.accessToken = tokens.mapbox;
   map = new mapboxgl.Map({container:'map', style:'mapbox://styles/mapbox/dark-v11', center:[28.0473,-26.2041], zoom:9});
   map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+  map.on('load', () => map.resize());
   if (tokens.google) {
     const s = document.createElement('script');
     s.src = `https://maps.googleapis.com/maps/api/js?key=${tokens.google}&libraries=places&callback=onGoogleReady`;
@@ -351,9 +375,9 @@ function initMap() {
 
 document.getElementById('load-btn').addEventListener('click', initMap);
 
-// Auto-init if Mapbox token was pre-filled at deploy time
-if (validators.mapbox(document.getElementById('tk-mapbox').value.trim())) {
-  initMap();
+// Auto-init after layout is painted so #map has correct dimensions
+if (validators.mapbox(storedTokens.mapbox)) {
+  requestAnimationFrame(() => initMap());
 }
 
 window.onGoogleReady = () => { googleReady = true; };
