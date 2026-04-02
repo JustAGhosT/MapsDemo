@@ -47,6 +47,13 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tex
 .provider-dot.google{background:var(--google);}.provider-dot.mapbox{background:var(--mapbox);}.provider-dot.here{background:var(--here);}
 .provider-name{font-weight:600;font-size:12px;flex:1;}
 .provider-latency{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);}
+.provider-cost{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);background:#0e1018;border:1px solid var(--border);border-radius:3px;padding:1px 5px;white-space:nowrap;}
+.provider-cost.active{color:var(--accent);border-color:#6c7fff40;}
+.mapboxgl-popup-content{background:#12141a!important;border:1px solid #1e2130;border-radius:6px!important;padding:10px 12px!important;box-shadow:0 4px 16px #00000088!important;min-width:160px;}
+.mapboxgl-popup-tip{border-top-color:#1e2130!important;border-bottom-color:#1e2130!important;}
+.popup-name{font-weight:600;font-size:12px;color:#d4d8e8;margin-bottom:4px;}
+.popup-addr{font-size:11px;color:#4a5068;margin-bottom:5px;line-height:1.4;}
+.popup-coords{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6c7fff;}
 .results-list{overflow-y:auto;flex:1;padding:6px;display:flex;flex-direction:column;gap:4px;}
 .result-item{padding:8px 10px;border-radius:5px;border:1px solid transparent;cursor:pointer;transition:all 0.15s;}
 .result-item:hover{background:#14172080;border-color:var(--border);}.result-item.selected{border-color:var(--accent)!important;background:#1a1e2c;}
@@ -99,6 +106,7 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tex
         <span class="provider-dot google"></span>
         <span class="provider-name">Google Places</span>
         <span class="provider-latency" id="lat-google">—</span>
+        <span class="provider-cost" id="cost-google" title="Place Details: $0.017/req × 5 results">$0.085/search</span>
       </div>
       <div class="results-list" id="list-google"><div class="empty-state">Awaiting search…</div></div>
     </div>
@@ -107,6 +115,7 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tex
         <span class="provider-dot mapbox"></span>
         <span class="provider-name">Mapbox Geocoding</span>
         <span class="provider-latency" id="lat-mapbox">—</span>
+        <span class="provider-cost" id="cost-mapbox" title="Geocoding API: $0.00075/req">$0.00075/search</span>
       </div>
       <div class="results-list" id="list-mapbox"><div class="empty-state">Awaiting search…</div></div>
     </div>
@@ -115,6 +124,7 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tex
         <span class="provider-dot here"></span>
         <span class="provider-name">HERE Geocoding</span>
         <span class="provider-latency" id="lat-here">—</span>
+        <span class="provider-cost" id="cost-here" title="Geocoding &amp; Search API: $0.00149/req">$0.00149/search</span>
       </div>
       <div class="results-list" id="list-here"><div class="empty-state">Awaiting search…</div></div>
     </div>
@@ -132,16 +142,46 @@ let map, googleReady=false;
 const markers={google:[],mapbox:[],here:[]};
 const colors={google:'#4285F4',mapbox:'#00b4a0',here:'#e05c2a'};
 const tokens={google:'',mapbox:'',here:''};
+// Cost per search (Google = 5×Place Details; others = 1×geocode)
+const COST_PER_SEARCH={google:0.085,mapbox:0.00075,here:0.00149};
+const callCount={google:0,mapbox:0,here:0};
+
+function updateCostDisplay(p){
+  const el=document.getElementById('cost-'+p);
+  const n=callCount[p];
+  if(n===0){el.className='provider-cost';return;}
+  const total=(n*COST_PER_SEARCH[p]).toFixed(4);
+  el.textContent=n+' search'+(n>1?'es':'')+' · ~$'+total;
+  el.className='provider-cost active';
+}
 
 function setList(p,html){document.getElementById('list-'+p).innerHTML=html;}
 function setLatency(p,ms){document.getElementById('lat-'+p).textContent=ms!=null?ms+'ms':'—';}
 function clearMarkers(p){markers[p].forEach(m=>m.remove());markers[p]=[];}
 
-function addMarker(provider,lng,lat,label){
+function addMarker(provider,lng,lat,label,address){
   if(!map)return;
   const el=document.createElement('div');
   el.style.cssText=`width:12px;height:12px;border-radius:50%;background:${colors[provider]};border:2px solid #fff;box-shadow:0 0 6px ${colors[provider]}88;cursor:pointer;`;
-  const m=new mapboxgl.Marker({element:el}).setLngLat([lng,lat]).setPopup(new mapboxgl.Popup({offset:14}).setText(label)).addTo(map);
+
+  const popupEl=document.createElement('div');
+  const nameEl=document.createElement('div');
+  nameEl.className='popup-name';
+  nameEl.textContent=label;
+  popupEl.appendChild(nameEl);
+  if(address&&address!==label){
+    const addrEl=document.createElement('div');
+    addrEl.className='popup-addr';
+    addrEl.textContent=address;
+    popupEl.appendChild(addrEl);
+  }
+  const coordEl=document.createElement('div');
+  coordEl.className='popup-coords';
+  coordEl.textContent=lat.toFixed(5)+', '+lng.toFixed(5);
+  popupEl.appendChild(coordEl);
+
+  const popup=new mapboxgl.Popup({offset:14,maxWidth:'240px'}).setDOMContent(popupEl);
+  const m=new mapboxgl.Marker({element:el}).setLngLat([lng,lat]).setPopup(popup).addTo(map);
   markers[provider].push(m);
 }
 
@@ -231,6 +271,7 @@ async function runSearch(){
   if(!q)return;
   ['google','mapbox','here'].forEach(p=>{setList(p,'<div class="loading-state">Searching…</div>');setLatency(p,null);clearMarkers(p);});
   await Promise.all([searchGoogle(q),searchMapbox(q),searchHere(q)]);
+  ['google','mapbox','here'].forEach(p=>{callCount[p]++;updateCostDisplay(p);});
 }
 
 function searchGoogle(q){
@@ -253,7 +294,7 @@ function searchGoogle(q){
           if(dStatus===google.maps.places.PlacesServiceStatus.OK&&place?.geometry){
             lat=place.geometry.location.lat();lng=place.geometry.location.lng();
             coords=`${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-            addMarker('google',lng,lat,main);
+            addMarker('google',lng,lat,main,sub);
           }
           list.appendChild(resultCard(main,sub,coords,'google',i,()=>{if(lng!=null)map.flyTo({center:[lng,lat],zoom:14,duration:800});}));
           if(done===items.length)resolve();
@@ -274,7 +315,7 @@ async function searchMapbox(q){
     const list=document.getElementById('list-mapbox');list.innerHTML='';
     features.forEach((f,i)=>{
       const[lng,lat]=f.center;const main=f.text||f.place_name;const sub=f.place_name;
-      addMarker('mapbox',lng,lat,main);
+      addMarker('mapbox',lng,lat,main,sub);
       list.appendChild(resultCard(main,sub,`${lat.toFixed(5)}, ${lng.toFixed(5)}`,'mapbox',i,()=>map.flyTo({center:[lng,lat],zoom:14,duration:800})));
     });
   }catch(e){setList('mapbox',`<div class="empty-state">Error: ${e.message}</div>`);}
@@ -429,7 +470,7 @@ async function searchHere(q){
     const list=document.getElementById('list-here');list.innerHTML='';
     items.forEach((item,i)=>{
       const{lat,lng}=item.position;const main=item.title;const sub=item.address?.label||'';
-      addMarker('here',lng,lat,main);
+      addMarker('here',lng,lat,main,sub);
       list.appendChild(resultCard(main,sub,`${lat.toFixed(5)}, ${lng.toFixed(5)}`,'here',i,()=>map.flyTo({center:[lng,lat],zoom:14,duration:800})));
     });
   }catch(e){setList('here',`<div class="empty-state">Error: ${e.message}</div>`);}
