@@ -11,23 +11,29 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{--bg:#0b0c10;--surface:#12141a;--border:#1e2130;--text:#d4d8e8;--muted:#4a5068;--google:#4285F4;--mapbox:#00b4a0;--here:#e05c2a;--accent:#6c7fff;}
 body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;font-size:13px;}
-#token-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;flex-direction:row;align-items:flex-end;gap:10px;flex-shrink:0;flex-wrap:wrap;}
-.token-col{flex:1;min-width:140px;display:flex;flex-direction:column;gap:4px;}
-.token-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1px;}
-.token-label{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.08em;}
-.token-label.google{color:var(--google);}.token-label.mapbox{color:var(--mapbox);}.token-label.here{color:var(--here);}
-.token-status{font-size:12px;line-height:1;transition:color 0.2s;}
-.token-status.ok{color:#4caf50;}.token-status.err{color:#f44336;}.token-status.empty{color:var(--muted);}
-.token-input{width:100%;background:#0e1018;border:1px solid var(--border);border-radius:5px;padding:6px 10px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;outline:none;transition:border-color 0.2s;}
-.token-input:focus{border-color:var(--accent);}.token-input::placeholder{color:#2a2f45;}
-.token-input.valid{border-color:#4caf5055;}.token-input.invalid{border-color:#f4433655;}
-#load-btn{background:var(--accent);color:#fff;border:none;border-radius:5px;padding:6px 16px;font-family:'IBM Plex Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;align-self:flex-end;transition:opacity 0.2s;flex-shrink:0;}
-#load-btn:hover{opacity:0.85;}#load-btn:disabled{opacity:0.4;cursor:not-allowed;}
-#search-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;gap:8px;flex-shrink:0;position:relative;}
-#search-input{flex:1;background:#0e1018;border:1px solid var(--border);border-radius:5px;padding:8px 12px;color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:13px;outline:none;}
-#search-input:focus{border-color:var(--accent);}#search-input::placeholder{color:#2a2f45;}#search-input:disabled{opacity:0.4;}
-#search-btn{background:#1a1e2c;border:1px solid var(--border);color:var(--text);border-radius:5px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:500;transition:border-color 0.2s;}
-#search-btn:hover{border-color:var(--accent);}#search-btn:disabled{opacity:0.4;cursor:not-allowed;}
+#header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px;height:46px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+#app-brand{font-size:12px;font-weight:700;letter-spacing:0.05em;color:var(--text);white-space:nowrap;flex-shrink:0;font-family:'IBM Plex Mono',monospace;}
+#app-brand em{color:var(--accent);font-style:normal;}
+#api-keys{display:flex;gap:6px;flex:1;min-width:0;}
+.key-slot{display:flex;align-items:center;flex:1;min-width:0;height:30px;background:#0a0b0f;border:1px solid var(--border);border-radius:5px;overflow:hidden;transition:border-color 0.15s;}
+.key-slot:focus-within{border-color:var(--accent)!important;}
+.key-slot.valid{border-color:#4caf5040;}
+.key-slot.invalid{border-color:#f4433640;}
+.key-pill{display:flex;align-items:center;gap:5px;padding:0 9px;border-right:1px solid var(--border);height:100%;flex-shrink:0;}
+.key-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.key-dot.google{background:var(--google);}.key-dot.mapbox{background:var(--mapbox);}.key-dot.here{background:var(--here);}
+.key-name{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:var(--muted);}
+.key-input{flex:1;background:transparent;border:none;padding:0 8px;height:100%;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;outline:none;min-width:0;}
+.key-input::placeholder{color:#252a3d;}
+.key-status{font-size:11px;padding:0 8px;flex-shrink:0;line-height:1;}
+.key-status.ok{color:#4caf50;}.key-status.err{color:#f44336;}.key-status.empty{color:#252a3d;}
+#load-btn{background:var(--accent);color:#fff;border:none;border-radius:5px;padding:0 14px;height:30px;font-family:'IBM Plex Sans',sans-serif;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:opacity 0.2s;letter-spacing:0.02em;}
+#load-btn:hover{opacity:0.85;}#load-btn:disabled{opacity:0.25;cursor:not-allowed;}
+#search-bar{background:var(--bg);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;gap:8px;flex-shrink:0;position:relative;}
+#search-input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:9px 14px;color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:13px;outline:none;transition:border-color 0.2s;}
+#search-input:focus{border-color:var(--accent);}#search-input::placeholder{color:#252a3d;}#search-input:disabled{opacity:0.3;}
+#search-btn{background:var(--accent);border:none;color:#fff;border-radius:6px;padding:0 20px;height:38px;cursor:pointer;font-size:13px;font-weight:600;font-family:'IBM Plex Sans',sans-serif;transition:opacity 0.2s;white-space:nowrap;}
+#search-btn:hover{opacity:0.85;}#search-btn:disabled{opacity:0.3;cursor:not-allowed;}
 #ac-dropdown{display:none;position:absolute;top:100%;left:14px;right:14px;z-index:100;background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;max-height:260px;overflow-y:auto;box-shadow:0 8px 24px #00000088;}
 .ac-item{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.12s;}
 .ac-item:last-child{border-bottom:none;}
@@ -83,29 +89,26 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tex
 </style>
 </head>
 <body>
-<div id="token-bar">
-  <div class="token-col">
-    <div class="token-head">
-      <span class="token-label google">GOOGLE</span>
-      <span class="token-status empty" id="st-google">—</span>
+<div id="header">
+  <div id="app-brand">GEO<em>COMP</em></div>
+  <div id="api-keys">
+    <div class="key-slot" id="ks-google">
+      <div class="key-pill"><span class="key-dot google"></span><span class="key-name">GOOGLE</span></div>
+      <input class="key-input" id="tk-google" type="password" placeholder="AIza…" autocomplete="off"/>
+      <span class="key-status empty" id="st-google">—</span>
     </div>
-    <input class="token-input" id="tk-google" type="password" placeholder="AIza… (Places enabled)" autocomplete="off"/>
-  </div>
-  <div class="token-col">
-    <div class="token-head">
-      <span class="token-label mapbox">MAPBOX</span>
-      <span class="token-status empty" id="st-mapbox">—</span>
+    <div class="key-slot" id="ks-mapbox">
+      <div class="key-pill"><span class="key-dot mapbox"></span><span class="key-name">MAPBOX</span></div>
+      <input class="key-input" id="tk-mapbox" type="password" placeholder="pk.eyJ1…" value="__MAPBOX_TOKEN__" autocomplete="off"/>
+      <span class="key-status empty" id="st-mapbox">—</span>
     </div>
-    <input class="token-input" id="tk-mapbox" type="password" placeholder="pk.eyJ1…" value="__MAPBOX_TOKEN__" autocomplete="off"/>
-  </div>
-  <div class="token-col">
-    <div class="token-head">
-      <span class="token-label here">HERE</span>
-      <span class="token-status empty" id="st-here">—</span>
+    <div class="key-slot" id="ks-here">
+      <div class="key-pill"><span class="key-dot here"></span><span class="key-name">HERE</span></div>
+      <input class="key-input" id="tk-here" type="password" placeholder="API key…" autocomplete="off"/>
+      <span class="key-status empty" id="st-here">—</span>
     </div>
-    <input class="token-input" id="tk-here" type="password" placeholder="HERE API key" autocomplete="off"/>
   </div>
-  <button id="load-btn" disabled>Load APIs</button>
+  <button id="load-btn" disabled>Load</button>
 </div>
 <div id="search-bar">
   <input id="search-input" type="text" placeholder="Type 3+ characters to compare all three…" disabled/>
@@ -298,7 +301,7 @@ const validators = {
   mapbox: v => v.startsWith('pk.') && v.length > 20,
   here:   v => v.length > 8,
 };
-const PLACEHOLDERS = {google:'AIza… (Places enabled)', mapbox:'pk.eyJ1…', here:'HERE API key'};
+const PLACEHOLDERS = {google:'AIza…', mapbox:'pk.eyJ1…', here:'API key…'};
 const storedTokens = {google:'', mapbox:'', here:''};
 
 function maskIfValid(provider) {
@@ -310,23 +313,24 @@ function maskIfValid(provider) {
 }
 
 function updateTokenStatus(provider) {
-  const input = document.getElementById('tk-' + provider);
+  const input  = document.getElementById('tk-' + provider);
   const status = document.getElementById('st-' + provider);
+  const slot   = document.getElementById('ks-' + provider);
   const v = input.value.trim();
   if (v) storedTokens[provider] = v;
   const eff = storedTokens[provider];
   if (!eff) {
-    input.className = 'token-input';
-    status.className = 'token-status empty';
+    slot.className   = 'key-slot';
+    status.className = 'key-status empty';
     status.textContent = '—';
     input.placeholder = PLACEHOLDERS[provider];
   } else if (validators[provider](eff)) {
-    input.className = 'token-input valid';
-    status.className = 'token-status ok';
+    slot.className   = 'key-slot valid';
+    status.className = 'key-status ok';
     status.textContent = '✓';
   } else {
-    input.className = 'token-input invalid';
-    status.className = 'token-status err';
+    slot.className   = 'key-slot invalid';
+    status.className = 'key-status err';
     status.textContent = '✗';
   }
   document.getElementById('load-btn').disabled = !validators.mapbox(storedTokens.mapbox || '');
