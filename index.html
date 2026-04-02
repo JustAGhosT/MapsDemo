@@ -19,11 +19,21 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tex
 .token-input:focus{border-color:var(--accent);}.token-input::placeholder{color:#2a2f45;}
 #load-btn{background:var(--accent);color:#fff;border:none;border-radius:5px;padding:6px 16px;font-family:'IBM Plex Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;align-self:flex-end;transition:opacity 0.2s;}
 #load-btn:hover{opacity:0.85;}
-#search-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;gap:8px;flex-shrink:0;}
+#search-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;gap:8px;flex-shrink:0;position:relative;}
 #search-input{flex:1;background:#0e1018;border:1px solid var(--border);border-radius:5px;padding:8px 12px;color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:13px;outline:none;}
 #search-input:focus{border-color:var(--accent);}#search-input::placeholder{color:#2a2f45;}#search-input:disabled{opacity:0.4;}
 #search-btn{background:#1a1e2c;border:1px solid var(--border);color:var(--text);border-radius:5px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:500;transition:border-color 0.2s;}
 #search-btn:hover{border-color:var(--accent);}#search-btn:disabled{opacity:0.4;cursor:not-allowed;}
+#ac-dropdown{display:none;position:absolute;top:100%;left:14px;right:14px;z-index:100;background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;max-height:260px;overflow-y:auto;box-shadow:0 8px 24px #00000088;}
+.ac-item{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.12s;}
+.ac-item:last-child{border-bottom:none;}
+.ac-item:hover,.ac-item.ac-active{background:#1a1e2c;}
+.ac-text{flex:1;font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ac-tag{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.06em;padding:2px 5px;border-radius:3px;flex-shrink:0;opacity:0.85;}
+.ac-tag.google{background:#4285F420;color:var(--google);border:1px solid #4285F440;}
+.ac-tag.mapbox{background:#00b4a020;color:var(--mapbox);border:1px solid #00b4a040;}
+.ac-tag.here{background:#e05c2a20;color:var(--here);border:1px solid #e05c2a40;}
+#ac-hint{font-size:10px;color:var(--muted);padding:0 0 4px 2px;}
 #main{display:flex;flex:1;overflow:hidden;}
 #results-panel{width:420px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden;}
 .provider-col{flex:1;border-bottom:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
@@ -65,8 +75,9 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tex
   <button id="load-btn">Load APIs</button>
 </div>
 <div id="search-bar">
-  <input id="search-input" type="text" placeholder="Type an address to compare all three…" disabled/>
+  <input id="search-input" type="text" placeholder="Type 3+ characters to compare all three…" disabled/>
   <button id="search-btn" disabled>Compare</button>
+  <div id="ac-dropdown"></div>
 </div>
 <div id="main">
   <div id="results-panel">
@@ -213,6 +224,143 @@ async function searchMapbox(q){
     });
   }catch(e){setList('mapbox',`<div class="empty-state">Error: ${e.message}</div>`);}
 }
+
+// ── Autocomplete ────────────────────────────────────────────────
+const MIN_AC_CHARS = 3;
+const AC_DEBOUNCE_MS = 300;
+let acTimer = null;
+let acActive = -1;
+
+const acDropdown = document.getElementById('ac-dropdown');
+
+function showDropdown(items) {
+  acActive = -1;
+  if (!items.length) { hideDropdown(); return; }
+  while (acDropdown.firstChild) acDropdown.removeChild(acDropdown.firstChild);
+  items.forEach(({text, provider, onSelect}) => {
+    const div = document.createElement('div');
+    div.className = 'ac-item';
+
+    const textSpan = document.createElement('span');
+    textSpan.className = 'ac-text';
+    textSpan.textContent = text;
+
+    const tagSpan = document.createElement('span');
+    tagSpan.className = 'ac-tag ' + provider;
+    tagSpan.textContent = provider;
+
+    div.appendChild(textSpan);
+    div.appendChild(tagSpan);
+
+    div.addEventListener('mousedown', e => {
+      e.preventDefault(); // keep focus on input
+      document.getElementById('search-input').value = text;
+      hideDropdown();
+      onSelect();
+    });
+    acDropdown.appendChild(div);
+  });
+  acDropdown.style.display = 'block';
+}
+
+function hideDropdown() {
+  acDropdown.style.display = 'none';
+  while (acDropdown.firstChild) acDropdown.removeChild(acDropdown.firstChild);
+  acActive = -1;
+}
+
+// Keyboard navigation
+document.getElementById('search-input').addEventListener('keydown', e => {
+  const items = acDropdown.querySelectorAll('.ac-item');
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    acActive = Math.min(acActive + 1, items.length - 1);
+    items.forEach((el, i) => el.classList.toggle('ac-active', i === acActive));
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    acActive = Math.max(acActive - 1, -1);
+    items.forEach((el, i) => el.classList.toggle('ac-active', i === acActive));
+  } else if (e.key === 'Enter') {
+    if (acActive >= 0 && items[acActive]) {
+      items[acActive].dispatchEvent(new MouseEvent('mousedown'));
+    } else {
+      runSearch();
+    }
+    hideDropdown();
+  } else if (e.key === 'Escape') {
+    hideDropdown();
+  }
+});
+
+document.getElementById('search-input').addEventListener('input', e => {
+  const q = e.target.value.trim();
+  clearTimeout(acTimer);
+  if (q.length < MIN_AC_CHARS) { hideDropdown(); return; }
+  acTimer = setTimeout(() => fetchAcAll(q), AC_DEBOUNCE_MS);
+});
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#search-bar')) hideDropdown();
+});
+
+async function fetchAcAll(q) {
+  const [gItems, mbItems, hereItems] = await Promise.all([
+    fetchAcGoogle(q),
+    fetchAcMapbox(q),
+    fetchAcHere(q),
+  ]);
+  // Merge and deduplicate by first 40 chars of lowercased label, cap at 10
+  const seen = new Set();
+  const merged = [];
+  for (const item of [...gItems, ...mbItems, ...hereItems]) {
+    const key = item.text.toLowerCase().slice(0, 40);
+    if (!seen.has(key)) { seen.add(key); merged.push(item); }
+    if (merged.length >= 10) break;
+  }
+  showDropdown(merged);
+}
+
+function fetchAcGoogle(q) {
+  return new Promise(resolve => {
+    if (!googleReady || !tokens.google) return resolve([]);
+    const svc = new google.maps.places.AutocompleteService();
+    svc.getPlacePredictions({input: q, componentRestrictions: {country: 'za'}}, (predictions, status) => {
+      if (status !== google.maps.places.PlacesServiceStatus.OK || !predictions?.length) return resolve([]);
+      resolve(predictions.slice(0, 5).map(p => ({
+        text: p.description,
+        provider: 'google',
+        onSelect: () => runSearch(),
+      })));
+    });
+  });
+}
+
+async function fetchAcMapbox(q) {
+  if (!tokens.mapbox) return [];
+  try {
+    const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(q)}.json?access_token=${tokens.mapbox}&country=za&language=en&limit=5&autocomplete=true`);
+    const data = await res.json();
+    return (data.features || []).slice(0, 5).map(f => ({
+      text: f.place_name,
+      provider: 'mapbox',
+      onSelect: () => runSearch(),
+    }));
+  } catch { return []; }
+}
+
+async function fetchAcHere(q) {
+  if (!tokens.here) return [];
+  try {
+    const res = await fetch(`https://autocomplete.search.hereapi.com/v1/autocomplete?q=${encodeURIComponent(q)}&in=countryCode:ZAF&limit=5&apiKey=${tokens.here}`);
+    const data = await res.json();
+    return (data.items || []).slice(0, 5).map(item => ({
+      text: item.title,
+      provider: 'here',
+      onSelect: () => runSearch(),
+    }));
+  } catch { return []; }
+}
+// ────────────────────────────────────────────────────────────────
 
 async function searchHere(q){
   if(!tokens.here){setList('here','<div class="empty-state">No HERE key — skipped</div>');return;}
