@@ -55,8 +55,6 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tex
 .popup-addr{font-size:11px;color:#4a5068;margin-bottom:5px;line-height:1.4;}
 .popup-coords{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6c7fff;}
 .results-list{overflow-y:auto;flex:1;padding:6px;display:flex;flex-direction:column;gap:4px;}
-.result-item{padding:8px 10px;border-radius:5px;border:1px solid transparent;cursor:pointer;transition:all 0.15s;}
-.result-item:hover{background:#14172080;border-color:var(--border);}.result-item.selected{border-color:var(--accent)!important;background:#1a1e2c;}
 .result-main{font-weight:500;font-size:12px;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .result-sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .result-coords{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent);margin-top:2px;}
@@ -67,6 +65,21 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tex
 .legend-row{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:500;}
 .legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
 ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+#preset-bar{background:var(--bg);border-bottom:1px solid var(--border);padding:6px 14px;display:flex;gap:6px;flex-shrink:0;overflow-x:auto;white-space:nowrap;}
+#preset-bar::-webkit-scrollbar{height:3px;}
+.preset-chip{background:#12141a;border:1px solid var(--border);color:var(--muted);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;flex-shrink:0;transition:all 0.15s;font-family:'IBM Plex Sans',sans-serif;}
+.preset-chip:hover{border-color:var(--accent);color:var(--text);}
+.preset-chip.active{border-color:var(--accent);color:var(--accent);background:#6c7fff15;}
+#rank-bar{display:none;flex-shrink:0;border-bottom:1px solid var(--border);background:#0e1018;}
+.rank-bar-cell{flex:1;padding:5px 10px;border-right:1px solid var(--border);min-width:0;}
+.rank-bar-cell:last-child{border-right:none;}
+.rank-bar-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.06em;display:block;margin-bottom:1px;}
+.rank-bar-label.google{color:var(--google);}.rank-bar-label.mapbox{color:var(--mapbox);}.rank-bar-label.here{color:var(--here);}
+.rank-bar-text{font-size:10px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;}
+.result-item{padding:6px 10px;border-radius:5px;border:1px solid transparent;cursor:pointer;transition:all 0.15s;display:flex;align-items:flex-start;gap:7px;}
+.result-item:hover{background:#14172080;border-color:var(--border);}.result-item.selected{border-color:var(--accent)!important;background:#1a1e2c;}
+.rank-badge{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);background:#0e1018;border:1px solid var(--border);border-radius:3px;padding:1px 4px;flex-shrink:0;margin-top:1px;}
+.result-body{flex:1;min-width:0;}
 </style>
 </head>
 <body>
@@ -99,8 +112,14 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tex
   <button id="search-btn" disabled>Compare</button>
   <div id="ac-dropdown"></div>
 </div>
+<div id="preset-bar"></div>
 <div id="main">
   <div id="results-panel">
+    <div id="rank-bar">
+      <div class="rank-bar-cell"><span class="rank-bar-label google">GOOGLE #1</span><span class="rank-bar-text" id="rb-google">—</span></div>
+      <div class="rank-bar-cell"><span class="rank-bar-label mapbox">MAPBOX #1</span><span class="rank-bar-text" id="rb-mapbox">—</span></div>
+      <div class="rank-bar-cell"><span class="rank-bar-label here">HERE #1</span><span class="rank-bar-text" id="rb-here">—</span></div>
+    </div>
     <div class="provider-col">
       <div class="provider-header">
         <span class="provider-dot google"></span>
@@ -188,7 +207,37 @@ function addMarker(provider,lng,lat,label,address){
 function resultCard(main,sub,coords,provider,idx,onClick){
   const div=document.createElement('div');
   div.className='result-item';
-  div.innerHTML=`<div class="result-main" title="${main}">${main}</div><div class="result-sub" title="${sub}">${sub}</div>${coords?`<div class="result-coords">${coords}</div>`:''}`;
+
+  const badge=document.createElement('span');
+  badge.className='rank-badge';
+  badge.textContent='#'+(idx+1);
+
+  const body=document.createElement('div');
+  body.className='result-body';
+
+  const mainEl=document.createElement('div');
+  mainEl.className='result-main';
+  mainEl.title=main;
+  mainEl.textContent=main;
+
+  const subEl=document.createElement('div');
+  subEl.className='result-sub';
+  subEl.title=sub;
+  subEl.textContent=sub;
+
+  body.appendChild(mainEl);
+  body.appendChild(subEl);
+
+  if(coords){
+    const coordEl=document.createElement('div');
+    coordEl.className='result-coords';
+    coordEl.textContent=coords;
+    body.appendChild(coordEl);
+  }
+
+  div.appendChild(badge);
+  div.appendChild(body);
+
   div.addEventListener('click',()=>{
     document.querySelectorAll(`#list-${provider} .result-item`).forEach(el=>el.classList.remove('selected'));
     div.classList.add('selected');
@@ -196,6 +245,52 @@ function resultCard(main,sub,coords,provider,idx,onClick){
   });
   return div;
 }
+
+// ── Query presets ───────────────────────────────────────────────
+const PRESETS=[
+  {label:'Sandton Drive #1',     query:'1 Sandton Drive, Sandton, Johannesburg'},
+  {label:'Chris Hani, Khayelitsha', query:'Chris Hani Drive, Khayelitsha, Cape Town'},
+  {label:'V&A Waterfront',       query:'V&A Waterfront, Cape Town'},
+  {label:'Vilakazi Street',      query:'Vilakazi Street, Orlando West, Soweto'},
+  {label:'OR Tambo Airport',     query:'OR Tambo International Airport'},
+  {label:'Kirstenbosch',         query:'Kirstenbosch National Botanical Garden'},
+  {label:'William Nicol & Sandton Dr', query:'cnr William Nicol Drive and Sandton Drive'},
+  {label:'Hartbeespoort Dam',    query:'Hartbeespoort Dam, North West'},
+  {label:'Long Street Cape Town',query:'Long Street, Cape Town City Centre'},
+  {label:'Luthuli Street Durban',query:'Chief Albert Luthuli Street, Durban CBD'},
+];
+
+let activePreset=null;
+(function buildPresets(){
+  const bar=document.getElementById('preset-bar');
+  PRESETS.forEach(({label,query})=>{
+    const btn=document.createElement('button');
+    btn.className='preset-chip';
+    btn.textContent=label;
+    btn.title=query;
+    btn.addEventListener('click',()=>{
+      const inp=document.getElementById('search-input');
+      if(!inp.disabled){
+        if(activePreset) activePreset.classList.remove('active');
+        btn.classList.add('active');
+        activePreset=btn;
+        inp.value=query;
+        hideDropdown();
+        runSearch();
+      }
+    });
+    bar.appendChild(btn);
+  });
+})();
+
+function updateRankBar(){
+  ['google','mapbox','here'].forEach(p=>{
+    const first=document.querySelector('#list-'+p+' .result-item:first-child .result-body .result-main');
+    document.getElementById('rb-'+p).textContent=first?first.textContent:'No results';
+  });
+  document.getElementById('rank-bar').style.display='flex';
+}
+// ───────────────────────────────────────────────────────────────
 
 // ── Token validation ────────────────────────────────────────────
 const validators = {
@@ -272,6 +367,7 @@ async function runSearch(){
   ['google','mapbox','here'].forEach(p=>{setList(p,'<div class="loading-state">Searching…</div>');setLatency(p,null);clearMarkers(p);});
   await Promise.all([searchGoogle(q),searchMapbox(q),searchHere(q)]);
   ['google','mapbox','here'].forEach(p=>{callCount[p]++;updateCostDisplay(p);});
+  updateRankBar();
 }
 
 function searchGoogle(q){
@@ -391,6 +487,7 @@ document.getElementById('search-input').addEventListener('keydown', e => {
 document.getElementById('search-input').addEventListener('input', e => {
   const q = e.target.value.trim();
   clearTimeout(acTimer);
+  if (activePreset) { activePreset.classList.remove('active'); activePreset=null; }
   if (q.length < MIN_AC_CHARS) { hideDropdown(); return; }
   acTimer = setTimeout(() => fetchAcAll(q), AC_DEBOUNCE_MS);
 });
