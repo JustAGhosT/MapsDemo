@@ -6,23 +6,33 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
   deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Inject secrets into index.html
+      - name: Inject Mapbox token
         env:
           MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
-        run: |
-          sed -i "s|__MAPBOX_TOKEN__|${MAPBOX_TOKEN}|g" index.html
+        run: sed -i "s|__MAPBOX_TOKEN__|${MAPBOX_TOKEN}|g" index.html
 
-      - name: Deploy to gh-pages branch
-        uses: peaceiris/actions-gh-pages@v4
+      - uses: actions/configure-pages@v4
+
+      - uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: .
-          exclude_assets: '.github'
+          path: .
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
