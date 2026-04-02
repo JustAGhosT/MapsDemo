@@ -45,27 +45,29 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tex
 .ac-tag.here{background:#e05c2a20;color:var(--here);border:1px solid #e05c2a40;}
 #ac-hint{font-size:10px;color:var(--muted);padding:0 0 4px 2px;}
 #main{display:flex;flex:1;overflow:hidden;}
-#results-panel{width:420px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden;}
-.provider-col{flex:1;border-bottom:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+#results-panel{width:440px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden;}
+.provider-col{flex:1;display:flex;flex-direction:column;overflow:hidden;border-bottom:1px solid var(--border);}
 .provider-col:last-child{border-bottom:none;}
-.provider-header{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;}
-.provider-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.provider-dot.google{background:var(--google);}.provider-dot.mapbox{background:var(--mapbox);}.provider-dot.here{background:var(--here);}
-.provider-name{font-weight:600;font-size:12px;flex:1;}
+.provider-header{display:flex;align-items:center;height:32px;padding:0 10px;gap:8px;background:var(--surface);border-bottom:1px solid var(--border);border-left:3px solid transparent;flex-shrink:0;}
+.provider-col.google .provider-header{border-left-color:var(--google);}
+.provider-col.mapbox .provider-header{border-left-color:var(--mapbox);}
+.provider-col.here .provider-header{border-left-color:var(--here);}
+.provider-dot{display:none;}
+.provider-name{font-weight:600;font-size:11px;flex:1;letter-spacing:0.02em;}
 .provider-latency{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);}
-.provider-cost{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);background:#0e1018;border:1px solid var(--border);border-radius:3px;padding:1px 5px;white-space:nowrap;}
-.provider-cost.active{color:var(--accent);border-color:#6c7fff40;}
+.provider-cost{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#2a3050;white-space:nowrap;transition:color 0.2s;}
+.provider-cost.active{color:var(--accent);}
 .mapboxgl-popup-content{background:#12141a!important;border:1px solid #1e2130;border-radius:6px!important;padding:10px 12px!important;box-shadow:0 4px 16px #00000088!important;min-width:160px;}
 .mapboxgl-popup-tip{border-top-color:#1e2130!important;border-bottom-color:#1e2130!important;}
 .popup-name{font-weight:600;font-size:12px;color:#d4d8e8;margin-bottom:4px;}
 .popup-addr{font-size:11px;color:#4a5068;margin-bottom:5px;line-height:1.4;}
 .popup-coords{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6c7fff;}
-.results-list{overflow-y:auto;flex:1;padding:6px;display:flex;flex-direction:column;gap:4px;}
-.result-main{font-weight:500;font-size:12px;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.result-sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.result-coords{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent);margin-top:2px;}
-.empty-state{padding:16px;font-size:11px;color:var(--muted);font-style:italic;text-align:center;}
-.loading-state{padding:16px;font-size:11px;color:var(--muted);text-align:center;}
+.results-list{overflow-y:auto;flex:1;padding:4px;display:flex;flex-direction:column;gap:1px;}
+.result-main{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.result-sub{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
+.result-coords{display:none;}
+.empty-state{padding:0;height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#252a3d;font-style:italic;}
+.loading-state{padding:0;height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);}
 #map{flex:1;position:relative;}
 #map-legend{position:absolute;bottom:30px;left:12px;z-index:10;background:#0b0c10dd;backdrop-filter:blur(8px);border:1px solid var(--border);border-radius:6px;padding:8px 12px;display:flex;flex-direction:column;gap:5px;}
 .legend-row{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:500;}
@@ -76,15 +78,18 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tex
 .preset-chip{background:#12141a;border:1px solid var(--border);color:var(--muted);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;flex-shrink:0;transition:all 0.15s;font-family:'IBM Plex Sans',sans-serif;}
 .preset-chip:hover{border-color:var(--accent);color:var(--text);}
 .preset-chip.active{border-color:var(--accent);color:var(--accent);background:#6c7fff15;}
-#rank-bar{display:none;flex-shrink:0;border-bottom:1px solid var(--border);background:#0e1018;}
-.rank-bar-cell{flex:1;padding:5px 10px;border-right:1px solid var(--border);min-width:0;}
+#rank-bar{display:none;flex-shrink:0;border-bottom:1px solid var(--border);}
+.rank-bar-cell{flex:1;padding:5px 10px 6px;border-right:1px solid var(--border);min-width:0;border-top:2px solid transparent;}
 .rank-bar-cell:last-child{border-right:none;}
-.rank-bar-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.06em;display:block;margin-bottom:1px;}
+.rank-bar-cell.google{border-top-color:var(--google);}.rank-bar-cell.mapbox{border-top-color:var(--mapbox);}.rank-bar-cell.here{border-top-color:var(--here);}
+.rank-bar-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.06em;display:block;margin-bottom:2px;}
 .rank-bar-label.google{color:var(--google);}.rank-bar-label.mapbox{color:var(--mapbox);}.rank-bar-label.here{color:var(--here);}
-.rank-bar-text{font-size:10px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;}
-.result-item{padding:6px 10px;border-radius:5px;border:1px solid transparent;cursor:pointer;transition:all 0.15s;display:flex;align-items:flex-start;gap:7px;}
-.result-item:hover{background:#14172080;border-color:var(--border);}.result-item.selected{border-color:var(--accent)!important;background:#1a1e2c;}
-.rank-badge{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);background:#0e1018;border:1px solid var(--border);border-radius:3px;padding:1px 4px;flex-shrink:0;margin-top:1px;}
+.rank-bar-text{font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;}
+.result-item{padding:5px 8px;border-radius:4px;border:1px solid transparent;cursor:pointer;transition:background 0.1s,border-color 0.1s;display:flex;align-items:flex-start;gap:6px;}
+.result-item:hover{background:#14172099;border-color:var(--border);}
+.result-item.selected{border-color:var(--accent)!important;background:#1a1e2c;}
+.rank-badge{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#252a3d;min-width:16px;text-align:right;flex-shrink:0;padding-top:2px;transition:color 0.1s;}
+.result-item:hover .rank-badge,.result-item.selected .rank-badge{color:var(--muted);}
 .result-body{flex:1;min-width:0;}
 </style>
 </head>
@@ -119,11 +124,11 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tex
 <div id="main">
   <div id="results-panel">
     <div id="rank-bar">
-      <div class="rank-bar-cell"><span class="rank-bar-label google">GOOGLE #1</span><span class="rank-bar-text" id="rb-google">—</span></div>
-      <div class="rank-bar-cell"><span class="rank-bar-label mapbox">MAPBOX #1</span><span class="rank-bar-text" id="rb-mapbox">—</span></div>
-      <div class="rank-bar-cell"><span class="rank-bar-label here">HERE #1</span><span class="rank-bar-text" id="rb-here">—</span></div>
+      <div class="rank-bar-cell google"><span class="rank-bar-label google">GOOGLE #1</span><span class="rank-bar-text" id="rb-google">—</span></div>
+      <div class="rank-bar-cell mapbox"><span class="rank-bar-label mapbox">MAPBOX #1</span><span class="rank-bar-text" id="rb-mapbox">—</span></div>
+      <div class="rank-bar-cell here"><span class="rank-bar-label here">HERE #1</span><span class="rank-bar-text" id="rb-here">—</span></div>
     </div>
-    <div class="provider-col">
+    <div class="provider-col google">
       <div class="provider-header">
         <span class="provider-dot google"></span>
         <span class="provider-name">Google Places</span>
@@ -132,7 +137,7 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tex
       </div>
       <div class="results-list" id="list-google"><div class="empty-state">Awaiting search…</div></div>
     </div>
-    <div class="provider-col">
+    <div class="provider-col mapbox">
       <div class="provider-header">
         <span class="provider-dot mapbox"></span>
         <span class="provider-name">Mapbox Geocoding</span>
@@ -141,7 +146,7 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tex
       </div>
       <div class="results-list" id="list-mapbox"><div class="empty-state">Awaiting search…</div></div>
     </div>
-    <div class="provider-col">
+    <div class="provider-col here">
       <div class="provider-header">
         <span class="provider-dot here"></span>
         <span class="provider-name">HERE Geocoding</span>
